@@ -1,4 +1,4 @@
-# STM8 tutorial projects
+# Alex's STM8 stuffs
 
 This repository is a set of small educational STM8 projects I did for my 
 personal entertainment and enlightenment. It's done with a plain Linux, 
