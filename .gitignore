@@ -1,4 +1,9 @@
 /docs
-*.o
-*.elf
+*.asm
 *.hex
+*.lk
+*.lst
+*.map
+*.rel
+*.rst
+*.sym
