@@ -1,9 +1,11 @@
 /docs
 *.asm
 *.hex
+*.ihx
 *.lk
 *.lst
 *.map
 *.rel
 *.rst
 *.sym
+*.mem
