@@ -1,0 +1,4 @@
+#include <impl/GPIO.h>
+
+
+GPIO__DISABLE_INTERRUPT(PORT_ID, PIN_ID)
