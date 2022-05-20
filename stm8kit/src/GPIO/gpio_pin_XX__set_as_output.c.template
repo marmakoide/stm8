@@ -1,0 +1,4 @@
+#include <impl/GPIO.h>
+
+
+GPIO__SET_PIN_AS_OUTPUT(PORT_ID, PIN_ID)

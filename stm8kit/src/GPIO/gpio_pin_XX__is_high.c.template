@@ -1,0 +1,4 @@
+#include <impl/GPIO.h>
+
+
+GPIO__PIN_IS_HIGH(PORT_ID, PIN_ID)
