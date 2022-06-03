@@ -14,6 +14,7 @@ building upon earlier tutorials. Each tutorial has some notes I took, as an
 attempt to leave the least amount of mystery.
 
 1. [led-blinker](tutorials/led-blinker) : blinks the Nucleo-32 on-board led
+1. [led-blinker](tutorials/timer-2) : blinks the Nucleo-32 on-board led, using timer interruptions and put the MCU in sleep mode most of the time
 
 ## Software environment
 
