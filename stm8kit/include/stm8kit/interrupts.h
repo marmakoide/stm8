@@ -1,8 +1,9 @@
 #ifndef STM8KIT_INTERRUPTS_H
 #define STM8KIT_INTERRUPTS_H
 
-#define rim() {__asm__("rim\n");}    // enable interrupts
-#define sim() {__asm__("sim\n");}    // disable interrupts
+#define rim() { __asm__("rim"); }  // Enable interrupts
+#define sim() { __asm__("sim"); }  // Disable interrupts
+#define wfi() { __asm__("wfi"); }  // Wait for interrupts
 
 
 #define TLI_ISR                   0
