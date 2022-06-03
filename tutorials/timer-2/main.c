@@ -54,7 +54,7 @@ void
 main() {
 	const uint16_t reload_value = 15625;
     
-	// Timer 3 setup
+	// Timer 2 setup
     TIM2_PSCR = 7;                    // Prescaler set to 128
     TIM2_ARRH = reload_value >> 8;    // Period set to 15625 (will give exactly 1Hz for default system clock at 2Mhz) 
     TIM2_ARRL = reload_value & 0xff;  
