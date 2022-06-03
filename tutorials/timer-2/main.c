@@ -57,7 +57,7 @@ main() {
 	// Timer 2 setup
     TIM2_PSCR = 7;                    // Prescaler set to 128
     TIM2_ARRH = reload_value >> 8;    // Period set to 15625 (will give exactly 1Hz for default system clock at 2Mhz) 
-    TIM2_ARRL = reload_value & 0xff;  
+    TIM2_ARRL = reload_value & 0xff;  // High byte should be set then low byte, per the manual, timer section
     TIM2_IER |= (1 << TIM2_IER__UIE); // Enable update interrupt
     TIM2_CR1 |= (1 << TIM2_CR1__CEN); // Enable TIM3 counter
 
