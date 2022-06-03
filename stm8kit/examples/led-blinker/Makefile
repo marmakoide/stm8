@@ -5,7 +5,7 @@ INCLUDES=../../include
 LD_PATH=../..
 
 CC=sdcc
-CFLAGS=-DF_CPU=2400000UL --std-sdcc11 --opt-code-size -I$(INCLUDES)
+CFLAGS=-DF_CPU=200000UL --std-sdcc11 --opt-code-size -I$(INCLUDES)
 LDFLAGS=-lstm8kit
 
 SOURCES=$(wildcard *.c)
