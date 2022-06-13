@@ -43,13 +43,6 @@
 #define UART_CR3__LINEN   6 // LIN mode enable
 
 
-inline void
-delay_ms(uint16_t ms) {
-    for (uint32_t i = ((F_CPU / 18000UL) * ms); i != 0; --i)
-        __asm__("nop");
-}
-
-
 int
 putchar(int c) {
 	while(!(UART3_SR & (1 << UART_SR__TXE)));
@@ -66,9 +59,12 @@ main() {
 	UART3_BRR2 = 0x00; // 9600 bauds
 	UART3_BRR1 = 0x0d; 
 
-	// Infinite loop
-	while(1) {
-		printf("Hello World!\r\n");
-		delay_ms(1000);
-	}    
+	// Print a message
+	printf("Hello World!\r\n");
+
+ 	// Go back to sleep whenever awaken by interrupt
+    while (1) {
+    	// Wait for interrupts
+    	__asm__("wfi");
+    }
 }
