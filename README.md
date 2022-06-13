@@ -15,6 +15,8 @@ attempt to leave the least amount of mystery.
 
 1. [led-blinker](tutorials/led-blinker) : blinks the Nucleo-32 on-board led
 1. [timer-2](tutorials/timer-2) : blinks the Nucleo-32 on-board led, using timer interruptions and put the MCU in sleep mode most of the time
+1. [uart-polling-write](tutorials/uart-polling-write) : send a message on the UART, using polling
+1. [uart-interrupt-write](tutorials/uart-interrupt-write) : send a message on the UART, using interrupts and a ring buffer
 
 ## Software environment
 
