@@ -16,6 +16,8 @@
 #define UART3_CR4    _SFR_(0x005247) // UART3 control register 4
 #define UART3_CR6    _SFR_(0x005249) // UART3 control register 6
 
+#define UART3_TX_ISR             20
+
 #define UART_SR__PE       0 // Parity error
 #define UART_SR__FE       1 // Framing error
 #define UART_SR__NF       2 // Noise flag
@@ -43,17 +45,44 @@
 #define UART_CR3__LINEN   6 // LIN mode enable
 
 
-inline void
-delay_ms(uint16_t ms) {
-    for (uint32_t i = ((F_CPU / 18000UL) * ms); i != 0; --i)
-        __asm__("nop");
+#define UART_TX_BUFFER_SIZE 16
+static volatile uint8_t uart_tx_start = 0;
+static volatile uint8_t uart_tx_end = 0;
+static volatile char uart_tx_buffer[UART_TX_BUFFER_SIZE];
+
+
+void
+uart3_tx_isr(void) __interrupt(UART3_TX_ISR) {
+	if (uart_tx_start == uart_tx_end)
+		UART3_CR2 &= ~(1 << UART_CR2__TIEN); // Disable interrupt when completed
+	else {
+		if (UART3_SR & (1 << UART_SR__TXE)) { // Transmit first char in the buffer
+			UART3_DR = uart_tx_buffer[uart_tx_start];
+			uart_tx_start = (uart_tx_start + 1) % UART_TX_BUFFER_SIZE;
+		}
+	}
 }
 
 
 int
 putchar(int c) {
-	while(!(UART3_SR & (1 << UART_SR__TXE)));
-	UART3_DR = c;
+	UART3_CR2 |= (1 << UART_CR2__TIEN); // Enable interrupt
+
+	int8_t done = 0;
+	do {
+		__asm__("sim"); // Disable interrupts
+		uint8_t uart_tx_next_end = (uart_tx_end + 1) % UART_TX_BUFFER_SIZE;
+		if (uart_tx_next_end != uart_tx_start) {
+			uart_tx_buffer[uart_tx_end] = c;
+			uart_tx_end = uart_tx_next_end;
+			done = 1;
+		}
+		__asm__("rim"); // Enable interrupts
+
+		if (!done)
+			__asm__("wfi");
+	} while(!done);
+			
 	return c;
 }
 
@@ -61,14 +90,20 @@ putchar(int c) {
 void
 main() {
 	// UART setup
-	UART3_CR2 |= 1 << UART_CR2__TEN; // Enable transmission
+	UART3_CR2 |= (1 << UART_CR2__TEN); // Enable transmission
 	UART3_CR3 &= ~((1 << UART_CR3__STOP1) | (1 << UART_CR3__STOP2)); // 8 bits + 1 stop bit
 	UART3_BRR2 = 0x00; // 9600 bauds
-	UART3_BRR1 = 0x0d; 
+	UART3_BRR1 = 0x0d;
+    
+	// Enable interrupts
+ 	__asm__("rim");
 
-	// Infinite loop
-	while(1) {
-		printf("Hello World!\r\n");
-		delay_ms(1000);
-	}    
+	// Print a message
+	printf("Hello, world ! Do you feel that ring buffer power ?!\r\n");
+	
+ 	// Go back to sleep whenever awaken by interrupt
+    while (1) {
+    	// Wait for interrupts
+    	__asm__("wfi");
+    }
 }

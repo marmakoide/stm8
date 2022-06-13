@@ -64,11 +64,13 @@ main() {
 	// Port C, pin 5 setup
     PC_DDR |= (1 << LED_PIN); // Configure PC15 as output
     PC_CR1 |= (1 << LED_PIN); // Push-pull mode
-    
-    __asm__("rim"); // Enable interrupts
+
+    // Enable interrupts
+    __asm__("rim");
 
     // Go back to sleep whenever awaken by interrupt
     while (1) {
-    	__asm__("wfi"); // Wait for interrupt
+    	// Wait for interrupt
+    	__asm__("wfi");
     }
 }
