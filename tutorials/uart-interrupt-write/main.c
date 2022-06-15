@@ -53,10 +53,12 @@ static volatile char uart_tx_buffer[UART_TX_BUFFER_SIZE];
 
 void
 uart3_tx_isr(void) __interrupt(UART3_TX_ISR) {
-	if (uart_tx_start == uart_tx_end)
-		UART3_CR2 &= ~(1 << UART_CR2__TIEN); // Disable interrupt when completed
-	else {
-		if (UART3_SR & (1 << UART_SR__TXE)) { // Transmit first char in the buffer
+	if (UART3_SR & (1 << UART_SR__TXE)) {
+		// Check if the buffer is full
+		if (uart_tx_start == uart_tx_end)
+			UART3_CR2 &= ~(1 << UART_CR2__TIEN); // Disable interrupt and transmission when completed
+		else {
+			// Transmit first char in the buffer
 			UART3_DR = uart_tx_buffer[uart_tx_start];
 			uart_tx_start = (uart_tx_start + 1) % UART_TX_BUFFER_SIZE;
 		}
@@ -66,7 +68,7 @@ uart3_tx_isr(void) __interrupt(UART3_TX_ISR) {
 
 int
 putchar(int c) {
-	UART3_CR2 |= (1 << UART_CR2__TIEN); // Enable interrupt
+	UART3_CR2 |= (1 << UART_CR2__TIEN); // Enable interrupt and transmission
 
 	int8_t done = 0;
 	do {
@@ -90,7 +92,7 @@ putchar(int c) {
 void
 main() {
 	// UART setup
-	UART3_CR2 |= (1 << UART_CR2__TEN); // Enable transmission
+	UART3_CR2 |= 1 << UART_CR2__TEN; // Enable transmission
 	UART3_CR3 &= ~((1 << UART_CR3__STOP1) | (1 << UART_CR3__STOP2)); // 8 bits + 1 stop bit
 	UART3_BRR2 = 0x00; // 9600 bauds
 	UART3_BRR1 = 0x0d;
