@@ -68,19 +68,19 @@ uart3_tx_isr(void) __interrupt(UART3_TX_ISR) {
 
 int
 putchar(int c) {
-	UART3_CR2 |= (1 << UART_CR2__TIEN); // Enable interrupt and transmission
-
 	int8_t done = 0;
 	do {
 		__asm__("sim"); // Disable interrupts
 		uint8_t uart_tx_next_end = (uart_tx_end + 1) % UART_TX_BUFFER_SIZE;
-		if (uart_tx_next_end != uart_tx_start) {
+		if (uart_tx_next_end != uart_tx_start) { // If buffer is not full
 			uart_tx_buffer[uart_tx_end] = c;
 			uart_tx_end = uart_tx_next_end;
+			UART3_CR2 |= (1 << UART_CR2__TIEN); // Enable interrupt and transmission			
 			done = 1;
 		}
 		__asm__("rim"); // Enable interrupts
 
+		// Wait for an interrupt to try again to push char into buffer
 		if (!done)
 			__asm__("wfi");
 	} while(!done);
