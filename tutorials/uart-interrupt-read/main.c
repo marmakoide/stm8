@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include <stdio.h>
 
 
@@ -17,6 +18,7 @@
 #define UART3_CR6    _SFR_(0x005249) // UART3 control register 6
 
 #define UART3_TX_ISR             20
+#define UART3_RX_ISR             21
 
 #define UART_SR__PE       0 // Parity error
 #define UART_SR__FE       1 // Framing error
@@ -50,6 +52,26 @@ static volatile uint8_t uart_tx_start = 0;
 static volatile uint8_t uart_tx_end = 0;
 static volatile char uart_tx_buffer[UART_TX_BUFFER_SIZE];
 
+#define UART_RX_BUFFER_SIZE 16
+static volatile uint8_t uart_rx_start = 0;
+static volatile uint8_t uart_rx_end = 0;
+static volatile char uart_rx_buffer[UART_RX_BUFFER_SIZE];
+
+
+void
+uart3_rx_isr(void) __interrupt(UART3_RX_ISR) {
+	if (UART3_SR & (1 << UART_SR__RXNE)) {
+		// Check if the buffer is full
+		uint8_t uart_rx_end_next = (uart_rx_end + 1) % UART_RX_BUFFER_SIZE;
+		if (uart_rx_end_next == uart_rx_start)
+			UART3_CR2 &= ~(1 << UART_CR2__RIEN); // Disable interrupt when full
+		else {
+			uart_rx_buffer[uart_rx_end] = UART3_DR;
+			uart_rx_end = uart_rx_end_next;
+		}
+	}
+}
+
 
 void
 uart3_tx_isr(void) __interrupt(UART3_TX_ISR) {
@@ -75,7 +97,7 @@ putchar(int c) {
 		if (uart_tx_next_end != uart_tx_start) { // If buffer is not full
 			uart_tx_buffer[uart_tx_end] = c;
 			uart_tx_end = uart_tx_next_end;
-			UART3_CR2 |= (1 << UART_CR2__TIEN); // Enable interrupt and transmission			
+			UART3_CR2 |= (1 << UART_CR2__TIEN); // Enable transmitter interrupt
 			done = 1;
 		}
 		__asm__("rim"); // Enable interrupts
@@ -89,10 +111,39 @@ putchar(int c) {
 }
 
 
+int
+getchar() {
+	int c = 0;
+
+	int8_t done = 0;
+	do {
+		__asm__("sim"); // Disable interrupts
+		if (uart_rx_end == uart_rx_start)
+			UART3_CR2 |= (1 << UART_CR2__RIEN); // Enable receiver interrupt
+		else {
+			c = uart_rx_buffer[uart_rx_start];
+			uart_rx_start = (uart_rx_start + 1) % UART_RX_BUFFER_SIZE;
+			done = 1;	
+		}
+		__asm__("rim"); // Enable interrupts
+				
+		// Wait for an interrupt to try again to push char into buffer
+		if (!done)
+			__asm__("wfi");
+	} while(!done);
+			
+	return c;		
+}
+
+
 void
 main() {
+	#define INPUT_BUFFER_SIZE 16
+	volatile char input_buffer[INPUT_BUFFER_SIZE];
+	
 	// UART setup
-	UART3_CR2 |= 1 << UART_CR2__TEN; // Enable transmission
+	UART3_CR2 |= (1 << UART_CR2__TEN) | (1 << UART_CR2__REN); // Enable transmission and reception'
+	UART3_CR2 |= (1 << UART_CR2__RIEN); // Enable reception interrupt
 	UART3_CR3 &= ~((1 << UART_CR3__STOP1) | (1 << UART_CR3__STOP2)); // 8 bits + 1 stop bit
 	UART3_BRR2 = 0x00; // 9600 bauds
 	UART3_BRR1 = 0x0d;
@@ -101,11 +152,24 @@ main() {
  	__asm__("rim");
 
 	// Print a message
-	printf("Hello, world ! Do you feel that ring buffer power ?!\r\n");
+	printf("Type messages, press Enter key\r\n");
 	
  	// Go back to sleep whenever awaken by interrupt
-    while (1) {
-    	// Wait for interrupts
-    	__asm__("wfi");
-    }
+	while(1) {
+		// Fill the input buffer
+		uint8_t i;
+		for(i = 0; i < INPUT_BUFFER_SIZE - 1; ++i) {
+			input_buffer[i] = (char)getchar();
+			if (input_buffer[i] == '\n')
+				break;
+		}
+		input_buffer[i+1] = '\0';
+		
+		// Write the content of the input buffer        
+		size_t len = strlen(input_buffer);
+		if (input_buffer[len - 1] == '\n')
+			input_buffer[len - 1] = '\0';
+
+		printf("=> '%s'\r\n", input_buffer);       
+	} 	
 }
